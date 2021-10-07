@@ -13,7 +13,6 @@ var connection = mysql.createConnection({
 
 connection.connect();
 
-/* GET home page. */
 router.get('/coins', function(req, res, next) {
   connection.query('SELECT * FROM coins', function(err, rows, fields) {
     res.json(rows);
@@ -30,19 +29,18 @@ router.get('/settings', function(req, res, next) {
   const ip = requestIp.getClientIp(req);
   const ipHash = crypto.createHash('md5').update(ip).digest('hex');
 
-  let query = 'SELECT * FROM settings';
+  let query = 'SELECT s.*, IFNULL(SUM(rl.upvote), 0) AS upvotes, IFNULL(SUM(rl.downvote), 0) AS downvotes FROM settings s LEFT JOIN rating_log rl ON rl.setting = s.id';
   let queryParams = [];
 
   if (typeof req.query.coin !== 'undefined') {
-    query = 'SELECT * FROM settings WHERE coin = ?'
-    queryParams = [req.query.coin]
+    query = `${query} WHERE s.coin = ?`;
+    queryParams = [req.query.coin];
+  } else if (typeof req.query.id !== 'undefined') {
+    query = `${query} WHERE s.id = ?`;
+    queryParams = [req.query.id];
   }
-  console.log(req.query.coin)
 
-  if (typeof req.query.id !== 'undefined') {
-    query = 'SELECT * FROM settings WHERE id = ?'
-    queryParams = [req.query.id]
-  }
+  query = `${query} GROUP BY s.id`;
 
   connection.query(query, queryParams, function(err, settings, fields) {
     if (settings.length) {
@@ -54,7 +52,7 @@ router.get('/settings', function(req, res, next) {
           if (votedSetting && vote.upvote) {
             votedSetting.votedUpByUser = true;
           } else if (votedSetting && vote.downvote) {
-            votedSetting.votedDownByUser = true
+            votedSetting.votedDownByUser = true;
           }
         });
         res.json(settings);
@@ -75,65 +73,35 @@ router.post('/settings', function(req, res, next) {
 });
 
 router.post('/rate', async function(req, res, next) {
-  const body = req.body
+  const body = req.body;
   const ip = requestIp.getClientIp(req);
   const ipHash = crypto.createHash('md5').update(ip).digest('hex');
 
-  const response = { error: false, message: '' }
+  const response = { error: false, message: '' };
 
+  // query: Did the user already cast the same vote for the same setting?
   connection.query('SELECT * FROM rating_log WHERE ipHash = ? AND setting = ? AND upvote = ? AND downvote = ?',
     [ipHash, body.id, body.upvote ? 1 : 0, body.downvote ? 1 : 0],
-    function (error, results, fields) {
+    function (error, currentVoteResult) {
       if (error) {
         response.error = true;
         response.message = 'Something went wrong while requesting rating log!';
       }
-      if (results.length > 0) {
+      const alreadyVoted = currentVoteResult.length > 0;
+      if (alreadyVoted) {
         response.error = true;
-        response.message = 'You already casted this vote for this setting!'
+        response.message = 'You already casted this vote for this setting!';
         res.json(response);
       } else {
+        // query: Did the user already cast another vote for the same setting?
         connection.query('SELECT * FROM rating_log WHERE ipHash = ? AND setting = ? AND upvote = ? AND downvote = ?',
         [ipHash, body.id, !body.upvote, !body.downvote],
-        function (error, results, fields) {
-          const voteChanged = results.length > 0;
-          if (voteChanged && body.upvote) {
-            connection.query('UPDATE miner_settings.settings SET downvotes = downvotes - 1 WHERE id = ?', [body.id]);
+        function (error, wouldBeVoteResult) {
+          const voteChanged = wouldBeVoteResult.length > 0;
+          if (voteChanged || !alreadyVoted) {
             deleteVoteFromLog(ipHash, body.id, !body.upvote, !body.downvote);
-          } else if (voteChanged && body.downvote) {
-            connection.query('UPDATE miner_settings.settings SET upvotes = upvotes - 1 WHERE id = ?', [body.id]);
-            deleteVoteFromLog(ipHash, body.id, !body.upvote, !body.downvote);
-          }
-          if (body.upvote) {
-            connection.query('UPDATE miner_settings.settings SET upvotes = upvotes + 1 WHERE id = ?',
-              [body.id],
-              function (error, results, fields) {
-                if (error) {
-                  response.error = true;
-                  response.message == 'Something went wrong while counting the vote!';
-                  res.json(response);
-                } else {
-                  logVote(ipHash, body.id, body.upvote, body.downvote)
-                  response.message == 'Vote casted!';
-                  res.json(response);
-                }
-              }
-            );
-          } else if (body.downvote) {
-            connection.query('UPDATE miner_settings.settings SET downvotes = downvotes + 1 WHERE id = ?',
-              [body.id],
-              function (error, results, fields) {
-                if (error) {
-                  response.error = true;
-                  response.message == 'Something went wrong while counting the vote!';
-                  res.json(response);
-                } else {
-                  logVote(ipHash, body.id, body.upvote, body.downvote)
-                  response.message == 'Vote casted!';
-                  res.json(response);
-                }
-              }
-            );
+            logVote(ipHash, body.id, body.upvote, body.downvote);
+            res.json(response);
           }
         });
       }
