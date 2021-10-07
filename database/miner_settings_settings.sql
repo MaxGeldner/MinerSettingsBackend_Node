@@ -34,8 +34,6 @@ CREATE TABLE `settings` (
   `voltage` decimal(5,2) DEFAULT NULL,
   `hashrate` int DEFAULT NULL,
   `wattage` int DEFAULT NULL,
-  `upvotes` int DEFAULT '0',
-  `downvotes` int DEFAULT '0',
   `created` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `setting_coin_idx` (`coin`),
