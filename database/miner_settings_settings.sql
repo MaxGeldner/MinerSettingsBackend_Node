@@ -42,7 +42,7 @@ CREATE TABLE `settings` (
   KEY `setting_gpu_idx` (`gpu`),
   CONSTRAINT `setting_coin` FOREIGN KEY (`coin`) REFERENCES `coins` (`id`),
   CONSTRAINT `setting_gpu` FOREIGN KEY (`gpu`) REFERENCES `gpus` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 

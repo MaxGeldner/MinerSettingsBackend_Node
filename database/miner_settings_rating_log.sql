@@ -30,7 +30,7 @@ CREATE TABLE `rating_log` (
   PRIMARY KEY (`ipHash`,`setting`,`upvote`,`downvote`),
   KEY `setting_id_idx` (`setting`),
   CONSTRAINT `setting_id` FOREIGN KEY (`setting`) REFERENCES `settings` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
