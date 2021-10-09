@@ -32,7 +32,7 @@ CREATE TABLE `settings` (
   `memClock` int DEFAULT NULL,
   `powerTarget` decimal(5,2) DEFAULT NULL,
   `voltage` decimal(5,2) DEFAULT NULL,
-  `hashrate` int DEFAULT NULL,
+  `hashrate` bigint(32) DEFAULT NULL,
   `wattage` int DEFAULT NULL,
   `created` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),

@@ -1,14 +1,16 @@
 var express = require('express');
+require('dotenv').config();
 const requestIp = require('request-ip');
 const crypto = require('crypto');
 var router = express.Router();
 
 var mysql = require('mysql');
+
 var connection = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: '1234',
-  database: 'miner_settings'
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_MAIN_DATABASE
 });
 
 connection.connect();
@@ -65,8 +67,16 @@ router.get('/settings', function(req, res, next) {
 
 router.post('/settings', function(req, res, next) {
   const body = req.body
+
+  if (typeof body.title === 'undefined' || typeof body.coin === 'undefined' || typeof body.coreClock === 'undefined' ||
+    typeof body.gpu === 'undefined' || typeof body.memClock === 'undefined' || typeof body.powerTarget === 'undefined' ||
+    typeof body.voltage === 'undefined' || typeof body.hashrate === 'undefined' || typeof body.wattage === 'undefined'
+  ) {
+    res.json(false);
+    return;
+  }
   connection.query('INSERT INTO settings (title, coin, gpu, coreClock, memClock, powerTarget, voltage, hashrate, wattage) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    [body.title, body.coin, body.gpu, body.coreClock, body.memClock, body.powerTarget, body.volate, body.hashrate, body.wattage],
+    [body.title, body.coin, body.gpu, body.coreClock, body.memClock, body.powerTarget, body.voltage, body.hashrate, body.wattage],
     function (error, results, fields) {
       error ? res.json(false) : res.json(true);
     });
