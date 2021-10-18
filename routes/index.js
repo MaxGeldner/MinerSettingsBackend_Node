@@ -6,14 +6,36 @@ var router = express.Router();
 
 var mysql = require('mysql');
 
-var connection = mysql.createConnection({
+var connectionCfg = {
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_MAIN_DATABASE
-});
+};
 
-connection.connect();
+var connection;
+
+function connectToServer() {
+  connection = mysql.createConnection(connectionCfg);
+
+  connection.connect(function(err) {
+    if(err) {
+      console.log(new Date(), 'Error when connecting to db:', err);
+      setTimeout(connectToServer, 2000);
+    }
+  });
+
+  connection.on('error', function(err) {
+    console.log(new Date(), 'DB error, will reconnect:', err);
+    if(err.code === 'PROTOCOL_CONNECTION_LOST') {
+      connectToServer();
+    } else {
+      throw err;
+    }
+  });
+}
+
+connectToServer();
 
 router.get('/coins', function(req, res, next) {
   connection.query('SELECT * FROM coins', function(err, rows, fields) {
