@@ -27,8 +27,8 @@ if (process.env.ENV === 'production') {
     const certdir = (fs.readdirSync("/etc/letsencrypt/live"))[0];
   
     return {
-      key: fs.readFileSync(`/etc/letsencrypt/live/${certdir}/privkey.pem`),
-      cert: fs.readFileSync(`/etc/letsencrypt/live/${certdir}/fullchain.pem`)
+      key: fs.readFileSync(`/etc/letsencrypt/live/${process.env.DOMAIN}/privkey.pem`),
+      cert: fs.readFileSync(`/etc/letsencrypt/live/${process.env.DOMAIN}/fullchain.pem`)
     }
   })();
 
