@@ -6,7 +6,9 @@
 
 var app = require('../app');
 var debug = require('debug')('miner-settings:server');
-var http = require('http');
+const https = require('https');
+const http = require('http');
+const fs = require('fs');
 
 /**
  * Get port from environment and store in Express.
@@ -18,8 +20,22 @@ app.set('port', port);
 /**
  * Create HTTP server.
  */
+let server = null;
 
-var server = http.createServer(app);
+if (process.env.ENV === 'production') {
+  const {key, cert} = (() => {
+    const certdir = (fs.readdirSync("/etc/letsencrypt/live"))[0];
+  
+    return {
+      key: fs.readFileSync(`/etc/letsencrypt/live/${certdir}/privkey.pem`),
+      cert: fs.readFileSync(`/etc/letsencrypt/live/${certdir}/fullchain.pem`)
+    }
+  })();
+
+  server = https.createServer({key, cert}, app);
+} else if (process.env.ENV === 'local') {
+  server = http.createServer(app);
+}
 
 /**
  * Listen on provided port, on all network interfaces.

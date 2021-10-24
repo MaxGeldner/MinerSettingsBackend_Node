@@ -37,6 +37,10 @@ function connectToServer() {
 
 connectToServer();
 
+router.get('/', function(req, res) {
+  res.send('Minersettings.com API is online!');
+});
+
 router.get('/coins', function(req, res, next) {
   connection.query('SELECT * FROM coins', function(err, rows, fields) {
     res.json(rows);
